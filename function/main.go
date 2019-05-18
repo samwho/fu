@@ -1,27 +1,27 @@
-package funcutil
+package function
 
 import "context"
 
-type Function interface {
+type F interface {
 	Call(ctx context.Context, i interface{}) (interface{}, error)
 }
 
-type FunctionFn func(ctx context.Context, i interface{}) (interface{}, error)
+type Fn func(ctx context.Context, i interface{}) (interface{}, error)
 
 type functionImpl struct {
-	f FunctionFn
+	f Fn
 }
 
 func (f *functionImpl) Call(ctx context.Context, i interface{}) (interface{}, error) {
 	return f.f(ctx, i)
 }
 
-func NewFunction(f FunctionFn) Function {
+func New(f Fn) F {
 	return &functionImpl{f: f}
 }
 
 type multiFn struct {
-	fs []Function
+	fs []F
 }
 
 func (mf *multiFn) Call(ctx context.Context, i interface{}) (interface{}, error) {
@@ -35,6 +35,6 @@ func (mf *multiFn) Call(ctx context.Context, i interface{}) (interface{}, error)
 	return i, nil
 }
 
-func ComposeFunctions(fs ...Function) Function {
+func Compose(fs ...F) F {
 	return &multiFn{fs: fs}
 }

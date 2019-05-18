@@ -1,16 +1,17 @@
-package funcutil
+package filter
 
-/*
 import (
 	"context"
+
+	"github.com/samwho/funcutil/predicate"
 )
 
-type Filter interface {
+type F interface {
 	Filter(ctx context.Context, is []interface{}) ([]interface{}, error)
 }
 
 type predicateFilter struct {
-	p Predicate
+	p predicate.P
 }
 
 func (pf *predicateFilter) Filter(ctx context.Context, is []interface{}) ([]interface{}, error) {
@@ -29,7 +30,7 @@ func (pf *predicateFilter) Filter(ctx context.Context, is []interface{}) ([]inte
 }
 
 type multiFilter struct {
-	fs []Filter
+	fs []F
 }
 
 func (mf *multiFilter) Filter(ctx context.Context, is []interface{}) ([]interface{}, error) {
@@ -43,11 +44,10 @@ func (mf *multiFilter) Filter(ctx context.Context, is []interface{}) ([]interfac
 	return is, nil
 }
 
-func NewFilterFn(f PredicateFn) Filter {
-	return &predicateFilter{p: NewPredicate(f)}
+func NewFn(f predicate.Fn) F {
+	return &predicateFilter{p: predicate.New(f)}
 }
 
-func NewFilter(p Predicate) Filter {
+func New(p predicate.P) F {
 	return &predicateFilter{p: p}
 }
-*/
