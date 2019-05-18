@@ -21,12 +21,12 @@ func MapFn(ctx context.Context, f function.Fn, is []interface{}) ([]interface{},
 	return mapper.NewFn(f).Map(ctx, is)
 }
 
-func Reduce(ctx context.Context, bf bifunction.B, is []interface{}) (interface{}, error) {
-	return reducer.New(bf).Reduce(ctx, is)
+func Reduce(ctx context.Context, bf bifunction.B, i interface{}, is []interface{}) (interface{}, error) {
+	return reducer.New(bf).Reduce(ctx, i, is)
 }
 
-func ReduceFn(ctx context.Context, bf bifunction.Fn, is []interface{}) (interface{}, error) {
-	return reducer.NewFn(bf).Reduce(ctx, is)
+func ReduceFn(ctx context.Context, bf bifunction.Fn, i interface{}, is []interface{}) (interface{}, error) {
+	return reducer.NewFn(bf).Reduce(ctx, i, is)
 }
 
 func Filter(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
@@ -35,6 +35,85 @@ func Filter(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}
 
 func FilterFn(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
 	return filter.NewFn(p).Filter(ctx, is)
+}
+
+func Any(ctx context.Context, p predicate.P, is []interface{}) (bool, error) {
+	for _, i := range is {
+		b, err := p.Test(ctx, i)
+		if err != nil {
+			return false, err
+		}
+		if b {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func AnyFn(ctx context.Context, p predicate.Fn, is []interface{}) (bool, error) {
+	return Any(ctx, predicate.New(p), is)
+}
+
+func All(ctx context.Context, p predicate.P, is []interface{}) (bool, error) {
+	for _, i := range is {
+		b, err := p.Test(ctx, i)
+		if err != nil {
+			return false, err
+		}
+		if !b {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func AllFn(ctx context.Context, p predicate.Fn, is []interface{}) (bool, error) {
+	return All(ctx, predicate.New(p), is)
+}
+
+func MapK(kf function.F) bifunction.B {
+	return bifunction.New(func(ctx context.Context, i interface{}, j interface{}) (interface{}, error) {
+		m, ok := i.(map[interface{}]interface{})
+		if !ok {
+			return nil, errors.New("type incompatible")
+		}
+
+		k, err := kf.Call(ctx, j)
+		if err != nil {
+			return nil, err
+		}
+		m[k] = j
+		return m, nil
+	})
+}
+
+func MapKV(kf function.F, vf function.F) bifunction.B {
+	return bifunction.New(func(ctx context.Context, i interface{}, j interface{}) (interface{}, error) {
+		m, ok := i.(map[interface{}]interface{})
+		if !ok {
+			return nil, errors.New("type incompatible")
+		}
+
+		k, err := kf.Call(ctx, j)
+		if err != nil {
+			return nil, err
+		}
+		v, err := vf.Call(ctx, j)
+		if err != nil {
+			return nil, err
+		}
+		m[k] = v
+		return m, nil
+	})
+}
+
+func GroupBy(ctx context.Context, f function.F, is []interface{}) (map[interface{}]interface{}, error) {
+	r := reducer.New(MapK(f))
+	m, err := r.Reduce(ctx, make(map[interface{}]interface{}), is)
+	if err != nil {
+		return nil, err
+	}
+	return m.(map[interface{}]interface{}), nil
 }
 
 func Sum() bifunction.B {
@@ -166,11 +245,11 @@ func Eq(a interface{}) predicate.P {
 }
 
 func Gte(a interface{}) predicate.P {
-	return predicate.Any(Gt(a), Eq(a))
+	return predicate.Or(Gt(a), Eq(a))
 }
 
 func Lte(a interface{}) predicate.P {
-	return predicate.Any(Lt(a), Eq(a))
+	return predicate.Or(Lt(a), Eq(a))
 }
 
 func Neq(a interface{}) predicate.P {

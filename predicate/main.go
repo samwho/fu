@@ -53,11 +53,11 @@ func (mp *anyPredicate) Test(ctx context.Context, i interface{}) (bool, error) {
 	return false, nil
 }
 
-func All(ps ...P) P {
+func And(ps ...P) P {
 	return &allPredicate{ps: ps}
 }
 
-func Any(ps ...P) P {
+func Or(ps ...P) P {
 	return &anyPredicate{ps: ps}
 }
 
