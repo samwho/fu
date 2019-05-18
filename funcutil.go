@@ -6,51 +6,27 @@ import (
 	"reflect"
 
 	"github.com/samwho/funcutil/bifunction"
+	"github.com/samwho/funcutil/filter"
 	"github.com/samwho/funcutil/function"
+	"github.com/samwho/funcutil/mapper"
 	"github.com/samwho/funcutil/predicate"
+	"github.com/samwho/funcutil/reducer"
 )
 
-func Map(ctx context.Context, f function.F, is []interface{}) ([]interface{}, error) {
-	ret := make([]interface{}, len(is))
-	for idx, i := range is {
-		var err error
-		ret[idx], err = f.Call(ctx, i)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ret, nil
+func Map(ctx context.Context, f function.Fn, is []interface{}) ([]interface{}, error) {
+	return mapper.NewFn(f).Map(ctx, is)
 }
 
-func Reduce(ctx context.Context, bf bifunction.B, is []interface{}) (interface{}, error) {
-	if len(is) == 0 {
-		return nil, nil
-	}
-
-	r := is[0]
-	var err error
-	for i := 1; i < len(is); i++ {
-		r, err = bf.Call(ctx, r, is[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return r, nil
+func Reduce(ctx context.Context, bf bifunction.Fn, is []interface{}) (interface{}, error) {
+	return reducer.NewFn(bf).Reduce(ctx, is)
 }
 
-func Filter(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
-	var filtered []interface{}
-	for _, i := range is {
-		b, err := p.Test(ctx, i)
-		if err != nil {
-			return nil, err
-		}
-		if !b {
-			continue
-		}
-		filtered = append(filtered, i)
-	}
-	return filtered, nil
+func Filter(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
+	return filter.NewFn(p).Filter(ctx, is)
+}
+
+func FilterP(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
+	return filter.New(p).Filter(ctx, is)
 }
 
 func Sum() bifunction.B {
@@ -77,6 +53,36 @@ func Sum() bifunction.B {
 				return b.(float32) + a.(float32), nil
 			case float64:
 				return b.(float64) + a.(float64), nil
+			default:
+				return false, errors.New("types not comparable")
+			}
+		})
+}
+
+func Sub() bifunction.B {
+	return bifunction.New(
+		func(ctx context.Context, a interface{}, b interface{}) (interface{}, error) {
+			if reflect.TypeOf(a).Kind() != reflect.TypeOf(b).Kind() {
+				return 0, errors.New("types not compatible")
+			}
+
+			switch a.(type) {
+			case int:
+				return b.(int) - a.(int), nil
+			case int32:
+				return b.(int32) - a.(int32), nil
+			case int64:
+				return b.(int64) - a.(int64), nil
+			case uint:
+				return b.(uint) - a.(uint), nil
+			case uint32:
+				return b.(uint32) - a.(uint32), nil
+			case uint64:
+				return b.(uint64) - a.(uint64), nil
+			case float32:
+				return b.(float32) - a.(float32), nil
+			case float64:
+				return b.(float64) - a.(float64), nil
 			default:
 				return false, errors.New("types not comparable")
 			}
