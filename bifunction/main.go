@@ -3,7 +3,7 @@ package bifunction
 import (
 	"context"
 
-	"github.com/samwho/funcutil/function"
+	"github.com/samwho/fu/function"
 )
 
 type B interface {

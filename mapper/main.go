@@ -3,7 +3,7 @@ package mapper
 import (
 	"context"
 
-	"github.com/samwho/funcutil/function"
+	"github.com/samwho/fu/function"
 )
 
 type M interface {

@@ -3,7 +3,7 @@ package reducer
 import (
 	"context"
 
-	"github.com/samwho/funcutil/bifunction"
+	"github.com/samwho/fu/bifunction"
 )
 
 type R interface {

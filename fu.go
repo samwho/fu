@@ -5,12 +5,12 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/samwho/funcutil/bifunction"
-	"github.com/samwho/funcutil/filter"
-	"github.com/samwho/funcutil/function"
-	"github.com/samwho/funcutil/mapper"
-	"github.com/samwho/funcutil/predicate"
-	"github.com/samwho/funcutil/reducer"
+	"github.com/samwho/fu/bifunction"
+	"github.com/samwho/fu/filter"
+	"github.com/samwho/fu/function"
+	"github.com/samwho/fu/mapper"
+	"github.com/samwho/fu/predicate"
+	"github.com/samwho/fu/reducer"
 )
 
 func Map(ctx context.Context, f function.F, is []interface{}) ([]interface{}, error) {

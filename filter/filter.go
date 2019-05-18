@@ -3,7 +3,7 @@ package filter
 import (
 	"context"
 
-	"github.com/samwho/funcutil/predicate"
+	"github.com/samwho/fu/predicate"
 )
 
 type F interface {
