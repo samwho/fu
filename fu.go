@@ -1,4 +1,4 @@
-package funcutil
+package fu
 
 import (
 	"context"
@@ -13,20 +13,28 @@ import (
 	"github.com/samwho/funcutil/reducer"
 )
 
-func Map(ctx context.Context, f function.Fn, is []interface{}) ([]interface{}, error) {
+func Map(ctx context.Context, f function.F, is []interface{}) ([]interface{}, error) {
+	return mapper.New(f).Map(ctx, is)
+}
+
+func MapFn(ctx context.Context, f function.Fn, is []interface{}) ([]interface{}, error) {
 	return mapper.NewFn(f).Map(ctx, is)
 }
 
-func Reduce(ctx context.Context, bf bifunction.Fn, is []interface{}) (interface{}, error) {
+func Reduce(ctx context.Context, bf bifunction.B, is []interface{}) (interface{}, error) {
+	return reducer.New(bf).Reduce(ctx, is)
+}
+
+func ReduceFn(ctx context.Context, bf bifunction.Fn, is []interface{}) (interface{}, error) {
 	return reducer.NewFn(bf).Reduce(ctx, is)
 }
 
-func Filter(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
-	return filter.NewFn(p).Filter(ctx, is)
+func Filter(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
+	return filter.New(p).Filter(ctx, is)
 }
 
-func FilterP(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
-	return filter.New(p).Filter(ctx, is)
+func FilterFn(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
+	return filter.NewFn(p).Filter(ctx, is)
 }
 
 func Sum() bifunction.B {
