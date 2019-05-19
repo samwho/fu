@@ -29,12 +29,20 @@ func ReduceFn(ctx context.Context, bf bifunction.Fn, i interface{}, is []interfa
 	return reducer.NewFn(bf).Reduce(ctx, i, is)
 }
 
-func Filter(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
+func Select(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
 	return filter.New(p).Filter(ctx, is)
 }
 
-func FilterFn(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
+func SelectFn(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
 	return filter.NewFn(p).Filter(ctx, is)
+}
+
+func Reject(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
+	return filter.New(predicate.Not(p)).Filter(ctx, is)
+}
+
+func RejectFn(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
+	return filter.New(predicate.Not(predicate.New(p))).Filter(ctx, is)
 }
 
 func Any(ctx context.Context, p predicate.P, is []interface{}) (bool, error) {
