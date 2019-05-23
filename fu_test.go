@@ -117,10 +117,69 @@ func TestSelect(t *testing.T) {
 			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
 			out:  []interface{}{3, 4},
 		},
+		{
+			desc: "less than or equal to 2",
+			p:    Lte(2),
+			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
+			out:  []interface{}{0, 1, 2},
+		},
+		{
+			desc: "greater than or equal to 2",
+			p:    Gte(2),
+			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
+			out:  []interface{}{2, 3, 4, 5, 6, 7},
+		},
+		{
+			desc: "not (greater than 2, less than 5)",
+			p:    Not(And(Gt(2), Lt(5))),
+			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
+			out:  []interface{}{0, 1, 2, 5, 6, 7},
+		},
+		{
+			desc: "strings",
+			p:    Gt("c"),
+			in:   []interface{}{"a", "b", "c", "d", "e"},
+			out:  []interface{}{"d", "e"},
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			selected, err := Select(ctx, tC.p, tC.in)
+			require.NoError(t, err)
+			assert.ElementsMatch(t, selected, tC.out)
+		})
+	}
+}
+
+func TestReject(t *testing.T) {
+	testCases := []struct {
+		desc string
+		p    predicate.P
+		in   []interface{}
+		out  []interface{}
+	}{
+		{
+			desc: "greater than 2",
+			p:    Gt(2),
+			in:   []interface{}{0, 1, 2, 3},
+			out:  []interface{}{0, 1, 2},
+		},
+		{
+			desc: "greater than 2, less than 5",
+			p:    And(Gt(2), Lt(5)),
+			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
+			out:  []interface{}{0, 1, 2, 5, 6, 7},
+		},
+		{
+			desc: "not (greater than 2, less than 5)",
+			p:    Not(And(Gt(2), Lt(5))),
+			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
+			out:  []interface{}{3, 4},
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			selected, err := Reject(ctx, tC.p, tC.in)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, selected, tC.out)
 		})
