@@ -3,7 +3,9 @@ package fu
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/samwho/fu/bifunction"
 	"github.com/samwho/fu/filter"
@@ -38,11 +40,11 @@ func SelectFn(ctx context.Context, p predicate.Fn, is []interface{}) ([]interfac
 }
 
 func Reject(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
-	return filter.New(predicate.Not(p)).Filter(ctx, is)
+	return filter.New(Not(p)).Filter(ctx, is)
 }
 
 func RejectFn(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
-	return filter.New(predicate.Not(predicate.New(p))).Filter(ctx, is)
+	return filter.New(Not(predicate.New(p))).Filter(ctx, is)
 }
 
 func Any(ctx context.Context, p predicate.P, is []interface{}) (bool, error) {
@@ -77,6 +79,12 @@ func All(ctx context.Context, p predicate.P, is []interface{}) (bool, error) {
 
 func AllFn(ctx context.Context, p predicate.Fn, is []interface{}) (bool, error) {
 	return All(ctx, predicate.New(p), is)
+}
+
+func Apply(i interface{}, bf bifunction.B) function.F {
+	return function.New(func(ctx context.Context, j interface{}) (interface{}, error) {
+		return bf.Call(ctx, i, j)
+	})
 }
 
 func MapK(kf function.F) bifunction.B {
@@ -124,6 +132,10 @@ func GroupBy(ctx context.Context, f function.F, is []interface{}) (map[interface
 	return m.(map[interface{}]interface{}), nil
 }
 
+func Add(a interface{}) function.F {
+	return Apply(a, Sum())
+}
+
 func Sum() bifunction.B {
 	return bifunction.New(
 		func(ctx context.Context, a interface{}, b interface{}) (interface{}, error) {
@@ -149,12 +161,16 @@ func Sum() bifunction.B {
 			case float64:
 				return b.(float64) + a.(float64), nil
 			default:
-				return false, errors.New("types not comparable")
+				return 0, errors.New("types not comparable")
 			}
 		})
 }
 
-func Sub() bifunction.B {
+func Sub(a interface{}) function.F {
+	return Apply(a, NegativeSum())
+}
+
+func NegativeSum() bifunction.B {
 	return bifunction.New(
 		func(ctx context.Context, a interface{}, b interface{}) (interface{}, error) {
 			if reflect.TypeOf(a).Kind() != reflect.TypeOf(b).Kind() {
@@ -163,25 +179,124 @@ func Sub() bifunction.B {
 
 			switch a.(type) {
 			case int:
-				return b.(int) - a.(int), nil
+				return a.(int) - b.(int), nil
 			case int32:
-				return b.(int32) - a.(int32), nil
+				return a.(int32) - b.(int32), nil
 			case int64:
-				return b.(int64) - a.(int64), nil
+				return a.(int64) - b.(int64), nil
 			case uint:
-				return b.(uint) - a.(uint), nil
+				return a.(uint) - b.(uint), nil
 			case uint32:
-				return b.(uint32) - a.(uint32), nil
+				return a.(uint32) - b.(uint32), nil
 			case uint64:
-				return b.(uint64) - a.(uint64), nil
+				return a.(uint64) - b.(uint64), nil
 			case float32:
-				return b.(float32) - a.(float32), nil
+				return a.(float32) - b.(float32), nil
 			case float64:
-				return b.(float64) - a.(float64), nil
+				return a.(float64) - b.(float64), nil
 			default:
 				return false, errors.New("types not comparable")
 			}
 		})
+}
+
+func String() function.F {
+	return function.New(
+		func(ctx context.Context, a interface{}) (interface{}, error) {
+			return fmt.Sprintf("%v", a), nil
+		})
+}
+
+func Concat(sep string) bifunction.B {
+	return bifunction.New(
+		func(ctx context.Context, a interface{}, b interface{}) (interface{}, error) {
+			as, aok := a.(string)
+			if !aok {
+				return "", errors.New("cannot concat non-strings")
+			}
+
+			bs, bok := b.(string)
+			if !bok {
+				return "", errors.New("cannot concat non-strings")
+			}
+
+			return strings.Join([]string{as, bs}, sep), nil
+		})
+}
+
+func Mul(a interface{}) function.F {
+	return Apply(a, Multiply())
+}
+
+func Multiply() bifunction.B {
+	return bifunction.New(
+		func(ctx context.Context, a interface{}, b interface{}) (interface{}, error) {
+			if reflect.TypeOf(a).Kind() != reflect.TypeOf(b).Kind() {
+				return 0, errors.New("types not compatible")
+			}
+
+			switch a.(type) {
+			case int:
+				return b.(int) * a.(int), nil
+			case int32:
+				return b.(int32) * a.(int32), nil
+			case int64:
+				return b.(int64) * a.(int64), nil
+			case uint:
+				return b.(uint) * a.(uint), nil
+			case uint32:
+				return b.(uint32) * a.(uint32), nil
+			case uint64:
+				return b.(uint64) * a.(uint64), nil
+			case float32:
+				return b.(float32) * a.(float32), nil
+			case float64:
+				return b.(float64) * a.(float64), nil
+			default:
+				return false, errors.New("types not comparable")
+			}
+		})
+}
+
+func And(ps ...predicate.P) predicate.P {
+	return predicate.New(func(ctx context.Context, a interface{}) (bool, error) {
+		for _, p := range ps {
+			b, err := p.Test(ctx, a)
+			if err != nil {
+				return false, nil
+			}
+
+			if !b {
+				return false, nil
+			}
+		}
+
+		return true, nil
+	})
+}
+
+func Or(ps ...predicate.P) predicate.P {
+	return predicate.New(func(ctx context.Context, a interface{}) (bool, error) {
+		for _, p := range ps {
+			b, err := p.Test(ctx, a)
+			if err != nil {
+				return false, nil
+			}
+
+			if b {
+				return true, nil
+			}
+		}
+
+		return false, nil
+	})
+}
+
+func Not(p predicate.P) predicate.P {
+	return predicate.New(func(ctx context.Context, a interface{}) (bool, error) {
+		b, err := p.Test(ctx, a)
+		return !b, err
+	})
 }
 
 func Gt(a interface{}) predicate.P {
@@ -253,13 +368,13 @@ func Eq(a interface{}) predicate.P {
 }
 
 func Gte(a interface{}) predicate.P {
-	return predicate.Or(Gt(a), Eq(a))
+	return Or(Gt(a), Eq(a))
 }
 
 func Lte(a interface{}) predicate.P {
-	return predicate.Or(Lt(a), Eq(a))
+	return Or(Lt(a), Eq(a))
 }
 
 func Neq(a interface{}) predicate.P {
-	return predicate.Not(Eq(a))
+	return Not(Eq(a))
 }

@@ -2,8 +2,6 @@ package bifunction
 
 import (
 	"context"
-
-	"github.com/samwho/fu/function"
 )
 
 type B interface {
@@ -37,10 +35,4 @@ func (mbf *multiBiFn) Call(ctx context.Context, i interface{}, j interface{}) (i
 		}
 	}
 	return i, nil
-}
-
-func Apply(i interface{}, bf B) function.F {
-	return function.New(func(ctx context.Context, j interface{}) (interface{}, error) {
-		return bf.Call(ctx, i, j)
-	})
 }
