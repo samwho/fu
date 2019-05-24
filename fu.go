@@ -23,6 +23,14 @@ func MapFn(ctx context.Context, f function.Fn, is []interface{}) ([]interface{},
 	return mapper.NewFn(f).Map(ctx, is)
 }
 
+func ParallelMap(ctx context.Context, paralellism int, f function.F, is []interface{}) ([]interface{}, error) {
+	return mapper.Parallel(paralellism, f).Map(ctx, is)
+}
+
+func ParallelMapFn(ctx context.Context, paralellism int, f function.Fn, is []interface{}) ([]interface{}, error) {
+	return mapper.Parallel(paralellism, function.New(f)).Map(ctx, is)
+}
+
 func Reduce(ctx context.Context, bf bifunction.B, i interface{}, is []interface{}) (interface{}, error) {
 	return reducer.New(bf).Reduce(ctx, i, is)
 }

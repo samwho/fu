@@ -59,6 +59,47 @@ func TestMap(t *testing.T) {
 	}
 }
 
+func TestParallelMap(t *testing.T) {
+	testCases := []struct {
+		desc string
+		f    function.F
+		in   []interface{}
+		out  []interface{}
+	}{
+		{
+			desc: "add",
+			f:    Add(1),
+			in:   []interface{}{0, 1, 2, 3},
+			out:  []interface{}{1, 2, 3, 4},
+		},
+		{
+			desc: "mul",
+			f:    Mul(2),
+			in:   []interface{}{0, 1, 2, 3},
+			out:  []interface{}{0, 2, 4, 6},
+		},
+		{
+			desc: "string",
+			f:    String(),
+			in:   []interface{}{0, 1.1, "hello"},
+			out:  []interface{}{"0", "1.1", "hello"},
+		},
+		{
+			desc: "add 1, string",
+			f:    function.Compose(Add(1), String()),
+			in:   []interface{}{0, 1, 2, 3},
+			out:  []interface{}{"1", "2", "3", "4"},
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			mapped, err := ParallelMap(ctx, 16, tC.f, tC.in)
+			require.NoError(t, err)
+			assert.ElementsMatch(t, tC.out, mapped)
+		})
+	}
+}
+
 func TestReduce(t *testing.T) {
 	testCases := []struct {
 		desc  string
