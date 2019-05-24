@@ -52,7 +52,7 @@ func TestMap(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			mapped, err := Map(ctx, tC.f, tC.in)
+			mapped, err := Map(ctx, tC.in, tC.f)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, tC.out, mapped)
 		})
@@ -93,7 +93,7 @@ func TestParallelMap(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			mapped, err := ParallelMap(ctx, 16, tC.f, tC.in)
+			mapped, err := ParallelMap(ctx, 16, tC.in, tC.f)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, tC.out, mapped)
 		})
@@ -132,7 +132,7 @@ func TestReduce(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			reduced, err := Reduce(ctx, tC.bf, tC.start, tC.in)
+			reduced, err := Reduce(ctx, tC.start, tC.in, tC.bf)
 			require.NoError(t, err)
 			assert.Equal(t, tC.out, reduced)
 		})
@@ -185,7 +185,7 @@ func TestSelect(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			selected, err := Select(ctx, tC.p, tC.in)
+			selected, err := Select(ctx, tC.in, tC.p)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, selected, tC.out)
 		})
@@ -220,7 +220,7 @@ func TestReject(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			selected, err := Reject(ctx, tC.p, tC.in)
+			selected, err := Reject(ctx, tC.in, tC.p)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, selected, tC.out)
 		})

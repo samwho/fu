@@ -15,47 +15,47 @@ import (
 	"github.com/samwho/fu/reducer"
 )
 
-func Map(ctx context.Context, f function.F, is []interface{}) ([]interface{}, error) {
+func Map(ctx context.Context, is []interface{}, f function.F) ([]interface{}, error) {
 	return mapper.New(f).Map(ctx, is)
 }
 
-func MapFn(ctx context.Context, f function.Fn, is []interface{}) ([]interface{}, error) {
+func MapFn(ctx context.Context, is []interface{}, f function.Fn) ([]interface{}, error) {
 	return mapper.NewFn(f).Map(ctx, is)
 }
 
-func ParallelMap(ctx context.Context, paralellism int, f function.F, is []interface{}) ([]interface{}, error) {
+func ParallelMap(ctx context.Context, paralellism int, is []interface{}, f function.F) ([]interface{}, error) {
 	return mapper.Parallel(paralellism, f).Map(ctx, is)
 }
 
-func ParallelMapFn(ctx context.Context, paralellism int, f function.Fn, is []interface{}) ([]interface{}, error) {
+func ParallelMapFn(ctx context.Context, paralellism int, is []interface{}, f function.Fn) ([]interface{}, error) {
 	return mapper.Parallel(paralellism, function.New(f)).Map(ctx, is)
 }
 
-func Reduce(ctx context.Context, bf bifunction.B, i interface{}, is []interface{}) (interface{}, error) {
+func Reduce(ctx context.Context, i interface{}, is []interface{}, bf bifunction.B) (interface{}, error) {
 	return reducer.New(bf).Reduce(ctx, i, is)
 }
 
-func ReduceFn(ctx context.Context, bf bifunction.Fn, i interface{}, is []interface{}) (interface{}, error) {
+func ReduceFn(ctx context.Context, i interface{}, is []interface{}, bf bifunction.Fn) (interface{}, error) {
 	return reducer.NewFn(bf).Reduce(ctx, i, is)
 }
 
-func Select(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
+func Select(ctx context.Context, is []interface{}, p predicate.P) ([]interface{}, error) {
 	return filter.New(p).Filter(ctx, is)
 }
 
-func SelectFn(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
+func SelectFn(ctx context.Context, is []interface{}, p predicate.Fn) ([]interface{}, error) {
 	return filter.NewFn(p).Filter(ctx, is)
 }
 
-func Reject(ctx context.Context, p predicate.P, is []interface{}) ([]interface{}, error) {
+func Reject(ctx context.Context, is []interface{}, p predicate.P) ([]interface{}, error) {
 	return filter.New(Not(p)).Filter(ctx, is)
 }
 
-func RejectFn(ctx context.Context, p predicate.Fn, is []interface{}) ([]interface{}, error) {
+func RejectFn(ctx context.Context, is []interface{}, p predicate.Fn) ([]interface{}, error) {
 	return filter.New(Not(predicate.New(p))).Filter(ctx, is)
 }
 
-func Any(ctx context.Context, p predicate.P, is []interface{}) (bool, error) {
+func Any(ctx context.Context, is []interface{}, p predicate.P) (bool, error) {
 	for _, i := range is {
 		b, err := p.Test(ctx, i)
 		if err != nil {
@@ -68,11 +68,11 @@ func Any(ctx context.Context, p predicate.P, is []interface{}) (bool, error) {
 	return false, nil
 }
 
-func AnyFn(ctx context.Context, p predicate.Fn, is []interface{}) (bool, error) {
-	return Any(ctx, predicate.New(p), is)
+func AnyFn(ctx context.Context, is []interface{}, p predicate.Fn) (bool, error) {
+	return Any(ctx, is, predicate.New(p))
 }
 
-func All(ctx context.Context, p predicate.P, is []interface{}) (bool, error) {
+func All(ctx context.Context, is []interface{}, p predicate.P) (bool, error) {
 	for _, i := range is {
 		b, err := p.Test(ctx, i)
 		if err != nil {
@@ -85,8 +85,8 @@ func All(ctx context.Context, p predicate.P, is []interface{}) (bool, error) {
 	return true, nil
 }
 
-func AllFn(ctx context.Context, p predicate.Fn, is []interface{}) (bool, error) {
-	return All(ctx, predicate.New(p), is)
+func AllFn(ctx context.Context, is []interface{}, p predicate.Fn) (bool, error) {
+	return All(ctx, is, predicate.New(p))
 }
 
 func Apply(i interface{}, bf bifunction.B) function.F {
