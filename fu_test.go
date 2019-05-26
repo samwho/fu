@@ -146,6 +146,30 @@ func TestFunctions(t *testing.T) {
 		})
 	}
 }
+
+func TestPredicates(t *testing.T) {
+	testCases := []struct {
+		p           predicate.P
+		in          interface{}
+		out         bool
+		expectedErr bool
+	}{
+		{p: Gt(0), in: -1, out: false},
+		{p: Gt(0), in: 1, out: true},
+	}
+	for _, tC := range testCases {
+		tC := tC
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
+			res, err := tC.p.Test(ctx, tC.in)
+			if tC.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.Equal(t, tC.out, res)
+			}
+		})
+	}
+}
 func TestMap(t *testing.T) {
 	t.Parallel()
 
