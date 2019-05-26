@@ -67,7 +67,9 @@ func TestBifunctions(t *testing.T) {
 		{bf: Join(", "), i: 1, j: 2, expectedErr: true},
 	}
 	for _, tC := range testCases {
+		tC := tC
 		t.Run("", func(t *testing.T) {
+			t.Parallel()
 			res, err := tC.bf.Call(ctx, tC.i, tC.j)
 			if tC.expectedErr {
 				assert.Error(t, err)
@@ -132,7 +134,9 @@ func TestFunctions(t *testing.T) {
 		{f: Field(""), in: struct{ A int }{}, expectedErr: true},
 	}
 	for _, tC := range testCases {
+		tC := tC
 		t.Run("", func(t *testing.T) {
+			t.Parallel()
 			res, err := tC.f.Call(ctx, tC.in)
 			if tC.expectedErr {
 				assert.Error(t, err)
@@ -143,6 +147,8 @@ func TestFunctions(t *testing.T) {
 	}
 }
 func TestMap(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		f    function.F
@@ -157,7 +163,9 @@ func TestMap(t *testing.T) {
 		},
 	}
 	for _, tC := range testCases {
+		tC := tC
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			mapped, err := Map(ctx, tC.in, tC.f)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, tC.out, mapped)
@@ -166,6 +174,8 @@ func TestMap(t *testing.T) {
 }
 
 func TestParallelMap(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		f    function.F
@@ -180,7 +190,9 @@ func TestParallelMap(t *testing.T) {
 		},
 	}
 	for _, tC := range testCases {
+		tC := tC
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			mapped, err := ParallelMap(ctx, 16, tC.in, tC.f)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, tC.out, mapped)
@@ -189,6 +201,8 @@ func TestParallelMap(t *testing.T) {
 }
 
 func TestReduce(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		bf   bifunction.B
@@ -203,7 +217,9 @@ func TestReduce(t *testing.T) {
 		},
 	}
 	for _, tC := range testCases {
+		tC := tC
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			reduced, err := Reduce(ctx, tC.in, tC.bf)
 			require.NoError(t, err)
 			assert.Equal(t, tC.out, reduced)
@@ -212,6 +228,8 @@ func TestReduce(t *testing.T) {
 }
 
 func TestSelect(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		p    predicate.P
@@ -256,7 +274,9 @@ func TestSelect(t *testing.T) {
 		},
 	}
 	for _, tC := range testCases {
+		tC := tC
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			selected, err := Select(ctx, tC.in, tC.p)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, selected, tC.out)
@@ -265,6 +285,8 @@ func TestSelect(t *testing.T) {
 }
 
 func TestReject(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		p    predicate.P
@@ -291,7 +313,9 @@ func TestReject(t *testing.T) {
 		},
 	}
 	for _, tC := range testCases {
+		tC := tC
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			selected, err := Reject(ctx, tC.in, tC.p)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, selected, tC.out)
@@ -300,6 +324,8 @@ func TestReject(t *testing.T) {
 }
 
 func TestGroupBy(t *testing.T) {
+	t.Parallel()
+
 	type record struct {
 		Id   int
 		Data string
