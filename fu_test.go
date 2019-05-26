@@ -230,6 +230,10 @@ func TestPredicates(t *testing.T) {
 		{p: Or(Lt(0), Gt(2)), in: 1, out: false},
 		{p: Or(Lt(0), Gt(2)), in: -1, out: true},
 		{p: Or(Lt(0), Gt(2)), in: 3, out: true},
+
+		{p: Not(Or(Lt(0), Gt(2))), in: 1, out: true},
+		{p: Not(Or(Lt(0), Gt(2))), in: -1, out: false},
+		{p: Not(Or(Lt(0), Gt(2))), in: 3, out: false},
 	}
 	for _, tC := range testCases {
 		tC := tC
@@ -327,6 +331,35 @@ func TestParallelMap(t *testing.T) {
 	}
 }
 
+func TestParallelMapFn(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc string
+		f    function.Fn
+		in   []interface{}
+		out  []interface{}
+	}{
+		{
+			desc: "add",
+			f: func(ctx context.Context, i interface{}) (interface{}, error) {
+				return i.(int) + 1, nil
+			},
+			in:  []interface{}{0, 1, 2, 3},
+			out: []interface{}{1, 2, 3, 4},
+		},
+	}
+	for _, tC := range testCases {
+		tC := tC
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+			mapped, err := ParallelMapFn(ctx, 16, tC.in, tC.f)
+			require.NoError(t, err)
+			assert.ElementsMatch(t, tC.out, mapped)
+		})
+	}
+}
+
 func TestReduce(t *testing.T) {
 	t.Parallel()
 
@@ -354,6 +387,35 @@ func TestReduce(t *testing.T) {
 	}
 }
 
+func TestReduceFn(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc string
+		bf   bifunction.Fn
+		in   []interface{}
+		out  interface{}
+	}{
+		{
+			desc: "sum",
+			bf: func(ctx context.Context, i interface{}, j interface{}) (interface{}, error) {
+				return i.(int) + j.(int), nil
+			},
+			in:  []interface{}{0, 1, 2, 3},
+			out: 6,
+		},
+	}
+	for _, tC := range testCases {
+		tC := tC
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+			reduced, err := ReduceFn(ctx, tC.in, tC.bf)
+			require.NoError(t, err)
+			assert.Equal(t, tC.out, reduced)
+		})
+	}
+}
+
 func TestSelect(t *testing.T) {
 	t.Parallel()
 
@@ -369,42 +431,41 @@ func TestSelect(t *testing.T) {
 			in:   []interface{}{0, 1, 2, 3},
 			out:  []interface{}{3},
 		},
-		{
-			desc: "greater than 2, less than 5",
-			p:    And(Gt(2), Lt(5)),
-			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
-			out:  []interface{}{3, 4},
-		},
-		{
-			desc: "less than or equal to 2",
-			p:    Lte(2),
-			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
-			out:  []interface{}{0, 1, 2},
-		},
-		{
-			desc: "greater than or equal to 2",
-			p:    Gte(2),
-			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
-			out:  []interface{}{2, 3, 4, 5, 6, 7},
-		},
-		{
-			desc: "not (greater than 2, less than 5)",
-			p:    Not(And(Gt(2), Lt(5))),
-			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
-			out:  []interface{}{0, 1, 2, 5, 6, 7},
-		},
-		{
-			desc: "strings",
-			p:    Gt("c"),
-			in:   []interface{}{"a", "b", "c", "d", "e"},
-			out:  []interface{}{"d", "e"},
-		},
 	}
 	for _, tC := range testCases {
 		tC := tC
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 			selected, err := Select(ctx, tC.in, tC.p)
+			require.NoError(t, err)
+			assert.ElementsMatch(t, selected, tC.out)
+		})
+	}
+}
+
+func TestSelectFn(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc string
+		p    predicate.Fn
+		in   []interface{}
+		out  []interface{}
+	}{
+		{
+			desc: "greater than 2",
+			p: func(ctx context.Context, i interface{}) (bool, error) {
+				return i.(int) > 2, nil
+			},
+			in:  []interface{}{0, 1, 2, 3},
+			out: []interface{}{3},
+		},
+	}
+	for _, tC := range testCases {
+		tC := tC
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+			selected, err := SelectFn(ctx, tC.in, tC.p)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, selected, tC.out)
 		})
@@ -426,24 +487,41 @@ func TestReject(t *testing.T) {
 			in:   []interface{}{0, 1, 2, 3},
 			out:  []interface{}{0, 1, 2},
 		},
-		{
-			desc: "greater than 2, less than 5",
-			p:    And(Gt(2), Lt(5)),
-			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
-			out:  []interface{}{0, 1, 2, 5, 6, 7},
-		},
-		{
-			desc: "not (greater than 2, less than 5)",
-			p:    Not(And(Gt(2), Lt(5))),
-			in:   []interface{}{0, 1, 2, 3, 4, 5, 6, 7},
-			out:  []interface{}{3, 4},
-		},
 	}
 	for _, tC := range testCases {
 		tC := tC
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 			selected, err := Reject(ctx, tC.in, tC.p)
+			require.NoError(t, err)
+			assert.ElementsMatch(t, selected, tC.out)
+		})
+	}
+}
+
+func TestRejectFn(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc string
+		p    predicate.Fn
+		in   []interface{}
+		out  []interface{}
+	}{
+		{
+			desc: "greater than 2",
+			p: func(ctx context.Context, i interface{}) (bool, error) {
+				return i.(int) > 2, nil
+			},
+			in:  []interface{}{0, 1, 2, 3},
+			out: []interface{}{0, 1, 2},
+		},
+	}
+	for _, tC := range testCases {
+		tC := tC
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+			selected, err := RejectFn(ctx, tC.in, tC.p)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, selected, tC.out)
 		})
