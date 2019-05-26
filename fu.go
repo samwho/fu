@@ -31,12 +31,12 @@ func ParallelMapFn(ctx context.Context, paralellism int, is []interface{}, f fun
 	return mapper.Parallel(paralellism, function.New(f)).Map(ctx, is)
 }
 
-func Reduce(ctx context.Context, i interface{}, is []interface{}, bf bifunction.B) (interface{}, error) {
-	return reducer.New(bf).Reduce(ctx, i, is)
+func Reduce(ctx context.Context, is []interface{}, bf bifunction.B) (interface{}, error) {
+	return reducer.New(bf).Reduce(ctx, is)
 }
 
-func ReduceFn(ctx context.Context, i interface{}, is []interface{}, bf bifunction.Fn) (interface{}, error) {
-	return reducer.NewFn(bf).Reduce(ctx, i, is)
+func ReduceFn(ctx context.Context, is []interface{}, bf bifunction.Fn) (interface{}, error) {
+	return reducer.NewFn(bf).Reduce(ctx, is)
 }
 
 func Select(ctx context.Context, is []interface{}, p predicate.P) ([]interface{}, error) {
@@ -95,27 +95,65 @@ func Apply(i interface{}, bf bifunction.B) function.F {
 	})
 }
 
+func ApplyEnd(bf bifunction.B, j interface{}) function.F {
+	return function.New(func(ctx context.Context, i interface{}) (interface{}, error) {
+		return bf.Call(ctx, i, j)
+	})
+}
+
+func Field(name string) function.F {
+	return function.New(func(ctx context.Context, i interface{}) (interface{}, error) {
+		if reflect.TypeOf(i).Kind() != reflect.Struct {
+			return nil, fmt.Errorf(`cannot get field of non-struct: %v`, i)
+		}
+		val := reflect.ValueOf(i)
+		if !val.IsValid() {
+			return nil, fmt.Errorf(`cannot get field value of invalid value: %v`, i)
+		}
+		field := val.FieldByName(name)
+		zero := reflect.Value{}
+		if field == zero || !field.CanInterface() {
+			return nil, fmt.Errorf(`cannot get field value for name %v on: %v`, name, i)
+		}
+		return field.Interface(), nil
+	})
+}
+
 func MapK(kf function.F) bifunction.B {
 	return bifunction.New(func(ctx context.Context, i interface{}, j interface{}) (interface{}, error) {
-		m, ok := i.(map[interface{}]interface{})
+		m, ok := i.(map[interface{}][]interface{})
 		if !ok {
-			return nil, errors.New("type incompatible")
+			m = make(map[interface{}][]interface{})
+			k, err := kf.Call(ctx, i)
+			if err != nil {
+				return nil, err
+			}
+			m[k] = append(m[k], i)
 		}
 
 		k, err := kf.Call(ctx, j)
 		if err != nil {
 			return nil, err
 		}
-		m[k] = j
+		m[k] = append(m[k], j)
 		return m, nil
 	})
 }
 
 func MapKV(kf function.F, vf function.F) bifunction.B {
 	return bifunction.New(func(ctx context.Context, i interface{}, j interface{}) (interface{}, error) {
-		m, ok := i.(map[interface{}]interface{})
+		m, ok := i.(map[interface{}][]interface{})
 		if !ok {
-			return nil, errors.New("type incompatible")
+			m = make(map[interface{}][]interface{})
+			k, err := kf.Call(ctx, i)
+			if err != nil {
+				return nil, err
+			}
+			v, err := vf.Call(ctx, i)
+			if err != nil {
+				return nil, err
+			}
+			m[k] = append(m[k], v)
 		}
 
 		k, err := kf.Call(ctx, j)
@@ -126,18 +164,18 @@ func MapKV(kf function.F, vf function.F) bifunction.B {
 		if err != nil {
 			return nil, err
 		}
-		m[k] = v
+		m[k] = append(m[k], v)
 		return m, nil
 	})
 }
 
-func GroupBy(ctx context.Context, f function.F, is []interface{}) (map[interface{}]interface{}, error) {
+func GroupBy(ctx context.Context, f function.F, is []interface{}) (map[interface{}][]interface{}, error) {
 	r := reducer.New(MapK(f))
-	m, err := r.Reduce(ctx, make(map[interface{}]interface{}), is)
+	m, err := r.Reduce(ctx, is)
 	if err != nil {
 		return nil, err
 	}
-	return m.(map[interface{}]interface{}), nil
+	return m.(map[interface{}][]interface{}), nil
 }
 
 func Add(a interface{}) function.F {
@@ -175,7 +213,7 @@ func Sum() bifunction.B {
 }
 
 func Sub(a interface{}) function.F {
-	return Apply(a, NegativeSum())
+	return ApplyEnd(NegativeSum(), a)
 }
 
 func NegativeSum() bifunction.B {
@@ -215,17 +253,17 @@ func String() function.F {
 		})
 }
 
-func Concat(sep string) bifunction.B {
+func Join(sep string) bifunction.B {
 	return bifunction.New(
 		func(ctx context.Context, a interface{}, b interface{}) (interface{}, error) {
 			as, aok := a.(string)
 			if !aok {
-				return "", errors.New("cannot concat non-strings")
+				return "", errors.New(fmt.Sprintf(`cannot join non-string: %v`, a))
 			}
 
 			bs, bok := b.(string)
 			if !bok {
-				return "", errors.New("cannot concat non-strings")
+				return "", errors.New(fmt.Sprintf(`cannot join non-string: %v`, b))
 			}
 
 			return strings.Join([]string{as, bs}, sep), nil

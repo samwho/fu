@@ -18,6 +18,130 @@ var (
 	ctx = context.Background()
 )
 
+func TestBifunctions(t *testing.T) {
+	testCases := []struct {
+		bf          bifunction.B
+		i           interface{}
+		j           interface{}
+		expectedRes interface{}
+		expectedErr bool
+	}{
+		{bf: Multiply(), i: int(3), j: int(3), expectedRes: int(9)},
+		{bf: Multiply(), i: int32(3), j: int32(3), expectedRes: int32(9)},
+		{bf: Multiply(), i: int64(3), j: int64(3), expectedRes: int64(9)},
+		{bf: Multiply(), i: uint(3), j: uint(3), expectedRes: uint(9)},
+		{bf: Multiply(), i: uint32(3), j: uint32(3), expectedRes: uint32(9)},
+		{bf: Multiply(), i: uint64(3), j: uint64(3), expectedRes: uint64(9)},
+		{bf: Multiply(), i: float32(3), j: float32(3), expectedRes: float32(9)},
+		{bf: Multiply(), i: float64(3), j: float64(3), expectedRes: float64(9)},
+		{bf: Multiply(), i: int(3), j: float64(3), expectedErr: true}, // could reasonably not be an error
+		{bf: Multiply(), i: "hello", j: "world", expectedErr: true},
+		{bf: Multiply(), i: struct{}{}, j: struct{}{}, expectedErr: true},
+
+		{bf: Sum(), i: int(3), j: int(3), expectedRes: int(6)},
+		{bf: Sum(), i: int32(3), j: int32(3), expectedRes: int32(6)},
+		{bf: Sum(), i: int64(3), j: int64(3), expectedRes: int64(6)},
+		{bf: Sum(), i: uint(3), j: uint(3), expectedRes: uint(6)},
+		{bf: Sum(), i: uint32(3), j: uint32(3), expectedRes: uint32(6)},
+		{bf: Sum(), i: uint64(3), j: uint64(3), expectedRes: uint64(6)},
+		{bf: Sum(), i: float32(3), j: float32(3), expectedRes: float32(6)},
+		{bf: Sum(), i: float64(3), j: float64(3), expectedRes: float64(6)},
+		{bf: Sum(), i: int(3), j: float64(3), expectedErr: true}, // could reasonably not be an error
+		{bf: Sum(), i: "hello", j: "world", expectedErr: true},
+		{bf: Sum(), i: struct{}{}, j: struct{}{}, expectedErr: true},
+
+		{bf: NegativeSum(), i: int(3), j: int(2), expectedRes: int(1)},
+		{bf: NegativeSum(), i: int32(3), j: int32(2), expectedRes: int32(1)},
+		{bf: NegativeSum(), i: int64(3), j: int64(2), expectedRes: int64(1)},
+		{bf: NegativeSum(), i: uint(3), j: uint(2), expectedRes: uint(1)},
+		{bf: NegativeSum(), i: uint32(3), j: uint32(2), expectedRes: uint32(1)},
+		{bf: NegativeSum(), i: uint64(3), j: uint64(2), expectedRes: uint64(1)},
+		{bf: NegativeSum(), i: float32(3), j: float32(2), expectedRes: float32(1)},
+		{bf: NegativeSum(), i: float64(3), j: float64(2), expectedRes: float64(1)},
+		{bf: NegativeSum(), i: int(3), j: float64(2), expectedErr: true}, // could reasonably not be an error
+		{bf: NegativeSum(), i: "hello", j: "world", expectedErr: true},
+		{bf: NegativeSum(), i: struct{}{}, j: struct{}{}, expectedErr: true},
+
+		{bf: Join(", "), i: "hello", j: "world", expectedRes: "hello, world"},
+		{bf: Join(", "), i: "hello", j: 1, expectedErr: true},
+		{bf: Join(", "), i: 1, j: 2, expectedErr: true},
+	}
+	for _, tC := range testCases {
+		t.Run("", func(t *testing.T) {
+			res, err := tC.bf.Call(ctx, tC.i, tC.j)
+			if tC.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.Equal(t, tC.expectedRes, res)
+			}
+		})
+	}
+}
+
+func TestFunctions(t *testing.T) {
+	testCases := []struct {
+		f           function.F
+		in          interface{}
+		out         interface{}
+		expectedErr bool
+	}{
+		{f: Add(int(1)), in: int(3), out: int(4)},
+		{f: Add(int32(1)), in: int32(3), out: int32(4)},
+		{f: Add(int64(1)), in: int64(3), out: int64(4)},
+		{f: Add(uint(1)), in: uint(3), out: uint(4)},
+		{f: Add(uint32(1)), in: uint32(3), out: uint32(4)},
+		{f: Add(uint64(1)), in: uint64(3), out: uint64(4)},
+		{f: Add(float32(1)), in: float32(3), out: float32(4)},
+		{f: Add(float64(1)), in: float64(3), out: float64(4)},
+		{f: Add(int(1)), in: float64(3), expectedErr: true},
+
+		{f: Mul(int(2)), in: int(3), out: int(6)},
+		{f: Mul(int32(2)), in: int32(3), out: int32(6)},
+		{f: Mul(int64(2)), in: int64(3), out: int64(6)},
+		{f: Mul(uint(2)), in: uint(3), out: uint(6)},
+		{f: Mul(uint32(2)), in: uint32(3), out: uint32(6)},
+		{f: Mul(uint64(2)), in: uint64(3), out: uint64(6)},
+		{f: Mul(float32(2)), in: float32(3), out: float32(6)},
+		{f: Mul(float64(2)), in: float64(3), out: float64(6)},
+		{f: Mul(int(2)), in: float64(3), expectedErr: true},
+
+		{f: Sub(int(2)), in: int(3), out: int(1)},
+		{f: Sub(int32(2)), in: int32(3), out: int32(1)},
+		{f: Sub(int64(2)), in: int64(3), out: int64(1)},
+		{f: Sub(uint(2)), in: uint(3), out: uint(1)},
+		{f: Sub(uint32(2)), in: uint32(3), out: uint32(1)},
+		{f: Sub(uint64(2)), in: uint64(3), out: uint64(1)},
+		{f: Sub(float32(2)), in: float32(3), out: float32(1)},
+		{f: Sub(float64(2)), in: float64(3), out: float64(1)},
+		{f: Sub(int(2)), in: float64(3), expectedErr: true},
+
+		{f: String(), in: int(2), out: "2"},
+		{f: String(), in: int32(2), out: "2"},
+		{f: String(), in: int64(2), out: "2"},
+		{f: String(), in: uint(2), out: "2"},
+		{f: String(), in: uint32(2), out: "2"},
+		{f: String(), in: uint64(2), out: "2"},
+		{f: String(), in: float32(2), out: "2"},
+		{f: String(), in: float64(2), out: "2"},
+		{f: String(), in: "2", out: "2"},
+		{f: String(), in: struct{ i int }{2}, out: "{2}"},
+
+		{f: Field("A"), in: struct{ A int }{2}, out: 2},
+		{f: Field("B"), in: struct{ B interface{} }{}, out: nil},
+		{f: Field("B"), in: struct{ A int }{}, expectedErr: true},
+		{f: Field(""), in: struct{ A int }{}, expectedErr: true},
+	}
+	for _, tC := range testCases {
+		t.Run("", func(t *testing.T) {
+			res, err := tC.f.Call(ctx, tC.in)
+			if tC.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.Equal(t, tC.out, res)
+			}
+		})
+	}
+}
 func TestMap(t *testing.T) {
 	testCases := []struct {
 		desc string
@@ -30,24 +154,6 @@ func TestMap(t *testing.T) {
 			f:    Add(1),
 			in:   []interface{}{0, 1, 2, 3},
 			out:  []interface{}{1, 2, 3, 4},
-		},
-		{
-			desc: "mul",
-			f:    Mul(2),
-			in:   []interface{}{0, 1, 2, 3},
-			out:  []interface{}{0, 2, 4, 6},
-		},
-		{
-			desc: "string",
-			f:    String(),
-			in:   []interface{}{0, 1.1, "hello"},
-			out:  []interface{}{"0", "1.1", "hello"},
-		},
-		{
-			desc: "add 1, string",
-			f:    function.Compose(Add(1), String()),
-			in:   []interface{}{0, 1, 2, 3},
-			out:  []interface{}{"1", "2", "3", "4"},
 		},
 	}
 	for _, tC := range testCases {
@@ -72,24 +178,6 @@ func TestParallelMap(t *testing.T) {
 			in:   []interface{}{0, 1, 2, 3},
 			out:  []interface{}{1, 2, 3, 4},
 		},
-		{
-			desc: "mul",
-			f:    Mul(2),
-			in:   []interface{}{0, 1, 2, 3},
-			out:  []interface{}{0, 2, 4, 6},
-		},
-		{
-			desc: "string",
-			f:    String(),
-			in:   []interface{}{0, 1.1, "hello"},
-			out:  []interface{}{"0", "1.1", "hello"},
-		},
-		{
-			desc: "add 1, string",
-			f:    function.Compose(Add(1), String()),
-			in:   []interface{}{0, 1, 2, 3},
-			out:  []interface{}{"1", "2", "3", "4"},
-		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
@@ -102,37 +190,21 @@ func TestParallelMap(t *testing.T) {
 
 func TestReduce(t *testing.T) {
 	testCases := []struct {
-		desc  string
-		bf    bifunction.B
-		in    []interface{}
-		start interface{}
-		out   interface{}
+		desc string
+		bf   bifunction.B
+		in   []interface{}
+		out  interface{}
 	}{
 		{
-			desc:  "sum",
-			bf:    Sum(),
-			in:    []interface{}{0, 1, 2, 3},
-			start: 0,
-			out:   6,
-		},
-		{
-			desc:  "negative sum",
-			bf:    NegativeSum(),
-			in:    []interface{}{0, 1, 2, 3},
-			start: 0,
-			out:   -6,
-		},
-		{
-			desc:  "multiply",
-			bf:    Multiply(),
-			in:    []interface{}{1, 2, 3, 4},
-			start: 1,
-			out:   24,
+			desc: "sum",
+			bf:   Sum(),
+			in:   []interface{}{0, 1, 2, 3},
+			out:  6,
 		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			reduced, err := Reduce(ctx, tC.start, tC.in, tC.bf)
+			reduced, err := Reduce(ctx, tC.in, tC.bf)
 			require.NoError(t, err)
 			assert.Equal(t, tC.out, reduced)
 		})
@@ -229,22 +301,18 @@ func TestReject(t *testing.T) {
 
 func TestGroupBy(t *testing.T) {
 	type record struct {
-		id   int
-		data string
+		Id   int
+		Data string
 	}
 
 	rs := []interface{}{
-		record{id: 1, data: "hello"},
-		record{id: 2, data: "world"},
+		record{Id: 1, Data: "hello"},
+		record{Id: 2, Data: "world"},
 	}
 
-	f := function.New(func(ctx context.Context, i interface{}) (interface{}, error) {
-		return i.(record).id, nil
-	})
-
-	m, err := GroupBy(ctx, f, rs)
+	m, err := GroupBy(ctx, Field("Id"), rs)
 	require.NoError(t, err)
 
-	assert.Equal(t, m[1], rs[0])
-	assert.Equal(t, m[2], rs[1])
+	assert.Equal(t, rs[0], m[1][0])
+	assert.Equal(t, rs[1], m[2][0])
 }

@@ -7,27 +7,32 @@ import (
 )
 
 type R interface {
-	Reduce(ctx context.Context, s interface{}, is []interface{}) (interface{}, error)
+	Reduce(ctx context.Context, is []interface{}) (interface{}, error)
 }
 
-type Fn func(ctx context.Context, s interface{}, is []interface{}) (interface{}, error)
+type Fn func(ctx context.Context, is []interface{}) (interface{}, error)
 
 type bifunctionReducer struct {
 	bf bifunction.B
 }
 
-func (b *bifunctionReducer) Reduce(ctx context.Context, s interface{}, is []interface{}) (interface{}, error) {
+func (b *bifunctionReducer) Reduce(ctx context.Context, is []interface{}) (interface{}, error) {
 	if len(is) == 0 {
 		return nil, nil
 	}
+	if len(is) == 1 {
+		return is[0], nil // TODO(samwho): unsure about this, revisit
+	}
+
 	var err error
-	for i := 0; i < len(is); i++ {
-		s, err = b.bf.Call(ctx, s, is[i])
+	ret := is[0]
+	for i := 1; i < len(is); i++ {
+		ret, err = b.bf.Call(ctx, ret, is[i])
 		if err != nil {
 			return nil, err
 		}
 	}
-	return s, nil
+	return ret, nil
 }
 
 func New(bf bifunction.B) R {
