@@ -327,16 +327,16 @@ func TestGroupBy(t *testing.T) {
 	t.Parallel()
 
 	type record struct {
-		Id   int
+		ID   int
 		Data string
 	}
 
 	rs := []interface{}{
-		record{Id: 1, Data: "hello"},
-		record{Id: 2, Data: "world"},
+		record{ID: 1, Data: "hello"},
+		record{ID: 2, Data: "world"},
 	}
 
-	m, err := GroupBy(ctx, Field("Id"), rs)
+	m, err := GroupBy(ctx, Field("ID"), rs)
 	require.NoError(t, err)
 
 	assert.Equal(t, rs[0], m[1][0])
