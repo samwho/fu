@@ -166,6 +166,12 @@ func TestFloat64s(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestInterfaces(t *testing.T) {
+	actual, err := Float64s(ctx, []float64{0}).Interfaces()
+	require.NoError(t, err)
+	assert.Equal(t, []interface{}{float64(0)}, actual)
+}
+
 func TestIntsError(t *testing.T) {
 	_, err := Ints(ctx, []int{0, 1}).MapFn(func(ctx context.Context, i interface{}) (interface{}, error) {
 		return nil, errors.New("")
@@ -219,5 +225,28 @@ func TestFloat64sError(t *testing.T) {
 	_, err := Float64s(ctx, []float64{0, 1}).MapFn(func(ctx context.Context, i interface{}) (interface{}, error) {
 		return nil, errors.New("")
 	}).Float64s()
+	assert.Error(t, err)
+}
+
+func TestInvalidTypeConversions(t *testing.T) {
+	var err error
+	_, err = Strings(ctx, []string{"hello"}).Ints()
+	assert.Error(t, err)
+	_, err = Strings(ctx, []string{"hello"}).Int32s()
+	assert.Error(t, err)
+	_, err = Strings(ctx, []string{"hello"}).Int64s()
+	assert.Error(t, err)
+	_, err = Strings(ctx, []string{"hello"}).Uints()
+	assert.Error(t, err)
+	_, err = Strings(ctx, []string{"hello"}).Uint32s()
+	assert.Error(t, err)
+	_, err = Strings(ctx, []string{"hello"}).Uint64s()
+	assert.Error(t, err)
+	_, err = Strings(ctx, []string{"hello"}).Float32s()
+	assert.Error(t, err)
+	_, err = Strings(ctx, []string{"hello"}).Float64s()
+	assert.Error(t, err)
+
+	_, err = Ints(ctx, []int{0}).Strings()
 	assert.Error(t, err)
 }

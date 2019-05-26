@@ -271,6 +271,35 @@ func TestMap(t *testing.T) {
 	}
 }
 
+func TestMapFn(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc string
+		f    function.Fn
+		in   []interface{}
+		out  []interface{}
+	}{
+		{
+			desc: "add",
+			f: func(ctx context.Context, i interface{}) (interface{}, error) {
+				return i.(int) + 1, nil
+			},
+			in:  []interface{}{0, 1, 2, 3},
+			out: []interface{}{1, 2, 3, 4},
+		},
+	}
+	for _, tC := range testCases {
+		tC := tC
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+			mapped, err := MapFn(ctx, tC.in, tC.f)
+			require.NoError(t, err)
+			assert.ElementsMatch(t, tC.out, mapped)
+		})
+	}
+}
+
 func TestParallelMap(t *testing.T) {
 	t.Parallel()
 
